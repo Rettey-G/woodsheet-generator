@@ -1,4 +1,4 @@
-const CACHE_NAME = 'woodsheet-generator-v1';
+const CACHE_NAME = 'woodcraft-pro-v1';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -8,7 +8,8 @@ const ASSETS_TO_CACHE = [
   '/assets/logo.png',
   '/assets/icon-192.png',
   '/assets/icon-512.png',
-  '/assets/Bubinga-QC.jpg'
+  '/assets/Bubinga-QC.jpg',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
 ];
 
 self.addEventListener('install', (event) => {
