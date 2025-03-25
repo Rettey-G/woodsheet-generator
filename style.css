@@ -50,11 +50,16 @@ header {
 }
 
 .logo {
+  height: 100px;
+  width: auto;
+}
+
+
+.logo-footer {
   height: 80px;
   width: auto;
   object-fit: contain;
 }
-
 .slogan {
   font-size: 0.9rem;
   color: rgba(255, 255, 255, 0.9);
@@ -475,4 +480,4 @@ footer {
   tr:active {
     background-color: rgba(76, 175, 80, 0.1);
   }
-}
+}                                     
