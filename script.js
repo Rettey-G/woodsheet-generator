@@ -1,3 +1,4 @@
+// Constants
 const sheetWidth = 2440; // Standard sheet width in mm
 const sheetHeight = 1220; // Standard sheet height in mm
 const woodWaste = 10; // 10mm waste between pieces
@@ -5,6 +6,7 @@ const sheetCost = 455; // Cost per sheet in RF
 const cutCost = 10; // Cost per cut in RF
 const teakCost = 10; // Cost per meter of teak in RF
 let sheets = []; // Array to store sheets and their pieces
+let currentUnit = 'mm'; // Default unit
 
 // Display dimensions (pixels)
 const displayWidth = 800; // px
@@ -15,18 +17,26 @@ const scaleX = displayWidth / sheetWidth;
 const scaleY = displayHeight / sheetHeight;
 const uniformScale = Math.min(scaleX, scaleY); // Maintain aspect ratio
 
+// Unit conversion event listener
+document.getElementById('unitSelector').addEventListener('change', function(e) {
+  currentUnit = e.target.value;
+  updateDisplayUnits();
+});
+
 document.getElementById('piece-form').addEventListener('submit', function (e) {
   e.preventDefault();
 
-  // Get user input
-  const length = parseInt(document.getElementById('length').value);
-  const width = parseInt(document.getElementById('width').value);
+  // Get user input and convert to mm
+  const length = UnitConverter.toMM(parseFloat(document.getElementById('length').value), currentUnit);
+  const width = UnitConverter.toMM(parseFloat(document.getElementById('width').value), currentUnit);
   const quantity = parseInt(document.getElementById('quantity').value);
   const teakSides = Array.from(document.querySelectorAll('input[name="teak"]:checked')).map(input => input.value);
 
   // Validate input
   if (length > sheetWidth || width > sheetHeight) {
-    alert(`Piece dimensions cannot exceed sheet size (${sheetWidth}mm x ${sheetHeight}mm)`);
+    const maxLength = UnitConverter.fromMM(sheetWidth, currentUnit);
+    const maxWidth = UnitConverter.fromMM(sheetHeight, currentUnit);
+    alert(`Piece dimensions cannot exceed sheet size (${maxLength}${currentUnit} x ${maxWidth}${currentUnit})`);
     return;
   }
 
@@ -157,14 +167,16 @@ function renderSheets() {
     const sheetDiv = document.createElement('div');
     sheetDiv.className = 'sheet';
     
-    // Add sheet title
+    // Add sheet title with converted units
     const titleDiv = document.createElement('div');
     titleDiv.className = 'sheet-title';
-    titleDiv.textContent = `Sheet ${index + 1} (${sheetWidth}mm × ${sheetHeight}mm)`;
+    const sheetWidthConverted = UnitConverter.fromMM(sheetWidth, currentUnit);
+    const sheetHeightConverted = UnitConverter.fromMM(sheetHeight, currentUnit);
+    titleDiv.textContent = `Sheet ${index + 1} (${sheetWidthConverted}${currentUnit} × ${sheetHeightConverted}${currentUnit})`;
     sheetDiv.appendChild(titleDiv);
 
     // Add pieces
-    sheet.pieces.forEach((piece, pieceIndex) => {
+    sheet.pieces.forEach((piece) => {
       const pieceDiv = document.createElement('div');
       pieceDiv.className = 'piece';
       
@@ -179,10 +191,13 @@ function renderSheets() {
       pieceDiv.style.left = `${displayX}px`;
       pieceDiv.style.top = `${displayY}px`;
       
-      // Add piece label
+      // Add piece label with converted units
       const labelDiv = document.createElement('div');
       labelDiv.className = 'piece-label';
-      labelDiv.textContent = `${piece.width} × ${piece.height}mm`;
+      const pieceWidthConverted = UnitConverter.fromMM(piece.width, currentUnit);
+      const pieceHeightConverted = UnitConverter.fromMM(piece.height, currentUnit);
+      labelDiv.textContent = `${pieceWidthConverted} × ${pieceHeightConverted}${currentUnit}`;
+      
       if (piece.isRotated) {
         labelDiv.textContent += ' (Rotated)';
       }
@@ -204,8 +219,8 @@ function renderSheetDetails() {
 
   sheets.forEach((sheet, index) => {
     const remainingArea = (sheet.width * sheet.height) - sheet.pieces.reduce((acc, piece) => acc + (piece.width * piece.height), 0);
-    const remainingLength = sheet.width - Math.max(...sheet.pieces.map(piece => piece.x + piece.width));
-    const remainingWidth = sheet.height - Math.max(...sheet.pieces.map(piece => piece.y + piece.height));
+    const remainingLength = UnitConverter.fromMM(sheet.width - Math.max(...sheet.pieces.map(piece => piece.x + piece.width)), currentUnit);
+    const remainingWidth = UnitConverter.fromMM(sheet.height - Math.max(...sheet.pieces.map(piece => piece.y + piece.height)), currentUnit);
     const numberOfCuts = sheet.pieces.length - 1;
     const teakMeters = sheet.pieces.reduce((acc, piece) => acc + calculateTeakMeters(piece), 0);
 
@@ -213,8 +228,8 @@ function renderSheetDetails() {
     row.innerHTML = `
       <td>Sheet ${index + 1}</td>
       <td>${(remainingArea / 1e6).toFixed(2)} m²</td>
-      <td>${remainingLength} mm</td>
-      <td>${remainingWidth} mm</td>
+      <td>${remainingLength.toFixed(2)} ${currentUnit}</td>
+      <td>${remainingWidth.toFixed(2)} ${currentUnit}</td>
       <td>${numberOfCuts}</td>
       <td>${teakMeters.toFixed(2)} m</td>
     `;
@@ -250,6 +265,9 @@ function generateQuotation() {
   const teakTotal = totalTeakMeters * teakCost;
   const grandTotal = sheetTotal + cutsTotal + teakTotal;
 
+  const sheetWidthConverted = UnitConverter.fromMM(sheetWidth, currentUnit);
+  const sheetHeightConverted = UnitConverter.fromMM(sheetHeight, currentUnit);
+
   quotationDiv.innerHTML = `
     <table>
       <thead>
@@ -262,13 +280,13 @@ function generateQuotation() {
       </thead>
       <tbody>
         <tr>
-          <td>Plywood Sheets (${sheetWidth}mm × ${sheetHeight}mm)</td>
+          <td>Plywood Sheets (${sheetWidthConverted}${currentUnit} × ${sheetHeightConverted}${currentUnit})</td>
           <td>${totalSheets}</td>
           <td>${sheetCost.toFixed(2)}</td>
           <td>${sheetTotal.toFixed(2)}</td>
         </tr>
         <tr>
-          <td>Cuts (@10mm blade width)</td>
+          <td>Cuts (@${UnitConverter.fromMM(woodWaste, currentUnit)}${currentUnit} blade width)</td>
           <td>${totalCuts}</td>
           <td>${cutCost.toFixed(2)}</td>
           <td>${cutsTotal.toFixed(2)}</td>
